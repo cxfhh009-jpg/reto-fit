@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Reto Fit</title>
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F6F1EB">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121014">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Reto Fit">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --bg:#F6F1EB; --card:#FFFFFF; --ink:#1D1622; --muted:#7B7082; --line:#ECE2D8;
+  --acc:#FF5B37; --acc2:#FF8A3D; --acc-soft:#FFE7DF; --vio:#6A4CFF; --vio-soft:#ECE8FF;
+  --ok:#0F9F68; --ok-soft:#DBF4E8; --bad:#DE3A40; --bad-soft:#FCE2E2; --warn:#B87A00; --warn-soft:#FFF1CC;
+  --r:20px; --sh:0 1px 2px rgba(29,22,34,.05),0 8px 24px rgba(29,22,34,.06);
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#121014; --card:#1D1920; --ink:#F3EDF5; --muted:#A69CAD; --line:#2E2732;
+    --acc-soft:#3B2019; --vio-soft:#26203F; --ok-soft:#10301F; --bad-soft:#3A1718; --warn-soft:#33290D; --warn:#E3A92B; --sh:none; }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none;background:var(--bg)}
+body{font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100dvh;overscroll-behavior:none}
+h1,h2,h3,.num{font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;letter-spacing:-.015em;line-height:1.15}
+h2{font-size:22px} h3{font-size:17px}
+button,a,label,[data-a]{touch-action:manipulation}
+button,.chip,.tab,.dchip,.seg button{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+button{font:inherit;color:inherit;cursor:pointer}
+input,textarea,select{font:inherit;font-size:16px;color:inherit}
+img{display:block;max-width:100%}
+.muted{color:var(--muted)} .small{font-size:13px} .center{text-align:center}
+.row{display:flex;align-items:center;gap:10px} .sp{flex:1} .wrap{flex-wrap:wrap}
+.stack>*+*{margin-top:10px}
+
+/* ---------- vistas de entrada ---------- */
+.entrada{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:calc(var(--st) + 24px) 22px calc(var(--sb) + 24px);max-width:440px;margin:0 auto}
+.logo{width:76px;height:76px;border-radius:22px;margin:0 auto 14px;box-shadow:0 10px 30px rgba(255,91,55,.35)}
+.entrada h1{font-size:30px;text-align:center}
+.entrada .lema{text-align:center;color:var(--muted);margin:6px 0 22px}
+.link{background:none;border:0;color:var(--acc);font-weight:600;padding:10px;font-size:15px}
+.cargando-pant{min-height:100dvh;display:grid;place-items:center}
+.spin{width:30px;height:30px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--acc);animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+
+/* ---------- app ---------- */
+.top{position:sticky;top:0;z-index:5;padding:calc(var(--st) + 10px) 18px 10px;background:var(--bg);background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);display:flex;align-items:center;gap:12px}
+.top h1{font-size:24px} .top .fecha{font-size:13px;color:var(--muted);font-weight:600}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:22px}
+main{padding:4px 16px calc(100px + var(--sb));max-width:560px;margin:0 auto}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 6px calc(6px + var(--sb));background:var(--card);background:color-mix(in srgb,var(--card) 90%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:var(--muted);background:none;border:0;padding:6px 0;transition:transform .12s ease-out}
+.tab svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current=page]{color:var(--acc)}
+.tab:active{transform:scale(.92)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:var(--sh);margin-bottom:14px}
+.card-t{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.card-t h3{flex:1}
+.sec-t{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 4px 10px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 18px;border-radius:15px;border:0;font-weight:700;font-size:16px;background:var(--line);color:var(--ink);width:100%;transition:transform .12s ease-out,opacity .12s}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--acc);color:#fff}
+.btn.sec{background:var(--acc-soft);color:var(--acc)}
+.btn.blanco{background:#fff;color:#1D1622}
+.btn.ok{background:var(--ok-soft);color:var(--ok)}
+.btn.bad{background:var(--bad-soft);color:var(--bad)}
+.btn.ghost{background:transparent;color:var(--muted)}
+.btn.sm{min-height:38px;padding:0 13px;font-size:14px;width:auto;border-radius:12px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn.ocupado{opacity:.6;pointer-events:none}
+.btn.ocupado::after{content:"";width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-top-color:transparent;animation:gira .7s linear infinite}
+
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--line);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.acc{background:var(--acc-soft);color:var(--acc)} .chip.vio{background:var(--vio-soft);color:var(--vio)}
+
+/* hoy */
+.hero{border-radius:24px;padding:20px;margin-bottom:14px;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 14px 34px rgba(255,91,55,.28);position:relative;overflow:hidden}
+.hero.listo{background:linear-gradient(135deg,#0F9F68,#33C48A);box-shadow:0 14px 34px rgba(15,159,104,.25)}
+.hero.libre{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:var(--sh)}
+.hero.rechazo{background:linear-gradient(135deg,#DE3A40,#F06A4F)}
+.hero.elegir{background:linear-gradient(135deg,var(--vio),#9A7BFF);box-shadow:0 14px 34px rgba(106,76,255,.25)}
+.hero h2{font-size:26px;margin-bottom:6px}
+.hero p{opacity:.92;margin-bottom:16px}
+.hero.libre p{color:var(--muted);opacity:1}
+.hero-emo{font-size:40px;line-height:1;margin-bottom:10px}
+.aviso{display:flex;gap:10px;align-items:center;background:var(--warn-soft);color:var(--warn);border-radius:16px;padding:12px 14px;margin-bottom:14px;font-weight:600;font-size:14px}
+.aviso .btn{flex-shrink:0}
+.aviso.info{background:var(--vio-soft);color:var(--vio)}
+
+.semana{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dia{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;color:var(--muted);font-weight:700}
+.bola{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;color:var(--muted);border:2px solid transparent}
+.d-futuro .bola{border:2px dashed var(--acc);color:var(--acc)}
+.d-hoy .bola{border-color:var(--acc);background:var(--acc-soft);color:var(--acc)}
+.d-cumplido .bola,.d-enviado .bola{background:var(--ok);color:#fff}
+.d-extra .bola{background:var(--ok-soft);color:var(--ok)}
+.d-falta .bola{background:var(--bad);color:#fff}
+.d-pendiente .bola{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.d-rechazado .bola{background:var(--bad-soft);color:var(--bad)}
+.d-anulada .bola{background:var(--line)}
+.d-esHoy span{color:var(--acc)}
+.leyenda{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:12px}
+.leyenda i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{display:block;width:100%;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--sh);text-align:left;font:inherit;color:inherit}
+.stat b{display:block;font-size:24px;font-family:ui-rounded,-apple-system,system-ui,sans-serif}
+.stat span{font-size:13px;color:var(--muted);font-weight:600}
+
+/* publicaciones */
+.post{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px;overflow:hidden;box-shadow:var(--sh)}
+.post header{display:flex;align-items:center;gap:10px;padding:12px 14px}
+.post header small{display:block;color:var(--muted);font-size:12px}
+.av{width:36px;height:36px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:19px;flex-shrink:0}
+.post .foto{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--line)}
+.post .nota{padding:10px 14px 0}
+.post footer{display:flex;gap:8px;padding:12px 14px;align-items:center;flex-wrap:wrap}
+.motivo{font-size:13px;color:var(--bad);padding:8px 14px 0}
+img.foto,img.mini{cursor:zoom-in;background:var(--line)}
+
+/* listas */
+.lista{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:14px;overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item .txt{flex:1;min-width:0}
+.item .txt b{display:block;font-weight:700}
+.item .txt small{display:block;color:var(--muted);font-size:13px}
+.mini{width:58px;height:58px;border-radius:12px;object-fit:cover;flex-shrink:0}
+.vacio{padding:22px 16px;text-align:center;color:var(--muted);font-size:14px}
+.monto{font-weight:800;font-family:ui-rounded,-apple-system,system-ui,sans-serif;white-space:nowrap}
+
+/* ranking */
+.podio{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:end;gap:8px;margin:6px 0 16px}
+.pod{text-align:center}
+.pod .av{width:56px;height:56px;font-size:30px;margin:0 auto 6px;background:var(--card);border:1px solid var(--line)}
+.pod.p1 .av{width:70px;height:70px;font-size:38px;border:3px solid #F5B82E}
+.pod .base{border-radius:16px 16px 6px 6px;padding:10px 4px;margin-top:6px;color:#fff;font-weight:800}
+.pod.p1 .base{background:linear-gradient(180deg,#F5B82E,#E89B12);height:96px}
+.pod.p2 .base{background:linear-gradient(180deg,#B9B4C4,#9690A6);height:72px}
+.pod.p3 .base{background:linear-gradient(180deg,#E09A6B,#C27748);height:56px}
+.pod b{font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pod .num{font-size:22px}
+.pos{width:26px;text-align:center;font-weight:800;color:var(--muted)}
+.seg{display:flex;background:var(--line);border-radius:13px;padding:3px;gap:3px;margin-bottom:14px}
+.seg button{flex:1;border:0;background:transparent;border-radius:10px;padding:8px 4px;font-size:13px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.pozo{display:flex;gap:10px}
+.pozo>div{flex:1}
+.pozo b{font-size:26px;display:block}
+
+/* dieta */
+.fechanav{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.fechanav b{flex:1;text-align:center}
+.circ{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:20px;display:grid;place-items:center}
+.circ[disabled]{opacity:.35}
+
+/* premios */
+.racha{text-align:center;padding:22px 16px}
+.racha .num{font-size:64px;color:var(--acc);line-height:1}
+.barra{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:10px 0 4px}
+.barra i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:6px}
+.premio{display:flex;gap:12px;align-items:flex-start}
+.premio .ico{width:46px;height:46px;border-radius:14px;background:var(--acc-soft);display:grid;place-items:center;font-size:24px;flex-shrink:0}
+
+/* hoja inferior */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(12,8,14,0);transition:background .22s ease-out}
+.sheet.abierto{background:rgba(12,8,14,.45)}
+.sheet-panel{width:100%;max-width:560px;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--bg);border-radius:26px 26px 0 0;padding:8px 18px calc(24px + var(--sb));transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.sheet.abierto .sheet-panel{transform:none}
+.agarre{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.agarre i{width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto}
+.cerrar{width:34px;height:34px;border-radius:50%;border:0;background:var(--line);font-size:16px;color:var(--muted)}
+.sheet h2{margin:2px 0 6px}
+
+.campo{display:block;margin:14px 0}
+.campo>span{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.inp{width:100%;min-height:50px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);outline:none;-webkit-appearance:none;appearance:none}
+.inp:focus{border-color:var(--acc)}
+textarea.inp{min-height:84px;resize:vertical}
+.foto-pick{display:block;position:relative;border:2px dashed var(--line);border-radius:18px;background:var(--card);overflow:hidden;aspect-ratio:4/3;margin:14px 0}
+.foto-pick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;z-index:2}
+.foto-pick .vacio-f{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-weight:700}
+.foto-pick .vacio-f b{font-size:38px}
+.foto-pick img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.foto-pick.lista-f{border-style:solid;border-color:var(--ok)}
+.opciones{display:flex;flex-wrap:wrap;gap:8px}
+.dchip{min-width:58px;min-height:44px;padding:0 12px;border-radius:13px;border:2px solid var(--line);background:var(--card);font-weight:700;color:var(--ink);transition:transform .1s ease-out}
+.dchip:active{transform:scale(.95)}
+.dchip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.dchip[disabled]{opacity:.45}
+.dchip.on[disabled]{opacity:.75}
+.dchip.buena.on{background:var(--ok);border-color:var(--ok)}
+.dchip.mala.on{background:var(--bad);border-color:var(--bad)}
+.switch{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.switch input{width:22px;height:22px;accent-color:var(--acc);flex-shrink:0}
+.switch span{flex:1;font-size:15px}
+.switch small{display:block;color:var(--muted);font-size:12px}
+.codigo{font-size:34px;font-weight:800;letter-spacing:.18em;text-align:center;padding:10px;font-family:ui-rounded,-apple-system,system-ui,sans-serif}
+.comentario{padding:10px 0;border-top:1px solid var(--line);font-size:15px}
+.comentario b{font-size:13px}
+.comentario small{color:var(--muted);font-size:12px}
+.reglas li{margin:6px 0 6px 18px;font-size:15px}
+.pasos li{margin:8px 0 8px 20px}
+details{margin:10px 0} details summary{font-weight:700;padding:8px 0;cursor:pointer}
+
+/* visor y aviso */
+.visor{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.92);display:grid;place-items:center;padding:calc(var(--st) + 10px) 10px calc(var(--sb) + 10px)}
+.visor img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.toast{position:fixed;left:16px;right:16px;top:calc(var(--st) + 10px);z-index:50;max-width:520px;margin:0 auto;background:var(--ink);color:var(--bg);padding:13px 16px;border-radius:15px;font-weight:600;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.25);transform:translateY(-20px);opacity:0;transition:transform .22s ease-out,opacity .22s ease-out;pointer-events:none}
+.toast.ver{transform:none;opacity:1}
+.toast.error{background:var(--bad);color:#fff}
+.esqueleto{height:120px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);margin-bottom:14px;animation:late 1.2s ease-in-out infinite}
+@keyframes late{50%{opacity:.55}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation-duration:.01ms!important}}
+@media (hover:hover) and (pointer:fine){
+  .btn:hover{filter:brightness(.97)} .tab:hover{color:var(--ink)} .link:hover{text-decoration:underline}
+}
+</style>
+</head>
+<body>
+
+<div id="v-cargando" class="cargando-pant"><div class="spin"></div></div>
+
+<!-- Entrar / crear cuenta -->
+<section id="v-auth" class="entrada" hidden>
+  <img class="logo" src="icon-192.png" alt="">
+  <h1 class="nombre-app">Reto Fit</h1>
+  <p class="lema">Entrenar, cumplir y apoyarnos.</p>
+  <form id="f-auth" class="stack">
+    <input class="inp" id="a-email" type="email" autocomplete="email" autocapitalize="none" autocorrect="off" placeholder="Correo" required>
+    <input class="inp" id="a-clave" type="password" autocomplete="current-password" placeholder="Contraseña (mínimo 6)" minlength="6" required>
+    <button class="btn pri" id="a-btn" type="submit" enterkeyhint="go">Entrar</button>
+  </form>
+  <div class="center" style="margin-top:12px">
+    <button class="link" data-a="authModo" id="a-modo">¿No tienes cuenta? Crear cuenta</button><br>
+    <button class="link" data-a="olvide" style="color:var(--muted);font-weight:500">Olvidé mi contraseña</button>
+  </div>
+  <p id="a-msg" class="center small muted" style="margin-top:10px"></p>
+</section>
+
+<!-- Unirse al grupo -->
+<section id="v-unirse" class="entrada" hidden>
+  <div style="font-size:54px;text-align:center">👋</div>
+  <h1>Únete al reto</h1>
+  <p class="lema">Pon tu nombre y el código que te pasó la administradora.</p>
+  <form id="f-unirse" class="stack">
+    <input class="inp" id="u-nombre" placeholder="Tu nombre" maxlength="40" autocomplete="given-name" required>
+    <input class="inp" id="u-codigo" placeholder="Código del grupo" autocapitalize="characters" autocorrect="off" required>
+    <div class="campo"><span>Elige tu emoji</span><div class="opciones" id="u-emojis"></div></div>
+    <button class="btn pri" type="submit">Entrar al reto</button>
+  </form>
+  <div class="center" style="margin-top:10px"><button class="link" data-a="salir" style="color:var(--muted)">Usar otra cuenta</button></div>
+</section>
+
+<!-- Falta configurar -->
+<section id="v-config" class="entrada" hidden>
+  <div style="font-size:54px;text-align:center">🛠️</div>
+  <h1>Falta configurar</h1>
+  <p class="lema">Abre <b>config.js</b> y pega la URL y la clave <i>anon</i> de tu proyecto de Supabase. La guía está en el README.</p>
+</section>
+
+<!-- Mensaje -->
+<section id="v-msg" class="entrada" hidden>
+  <div id="m-emo" style="font-size:54px;text-align:center">😕</div>
+  <h1 id="m-tit"></h1>
+  <p class="lema" id="m-txt"></p>
+  <button class="btn pri" data-a="recargar">Intentar de nuevo</button>
+  <div class="center" style="margin-top:10px"><button class="link" data-a="salir" style="color:var(--muted)">Cerrar sesión</button></div>
+</section>
+
+<!-- App -->
+<div id="v-app" hidden>
+  <header class="top">
+    <div class="sp"><div class="fecha" id="t-fecha"></div><h1 id="t-nombre">Reto Fit</h1></div>
+    <button class="avatar" data-a="ajustes" aria-label="Ajustes" id="t-yo">💪</button>
+  </header>
+  <main id="main"></main>
+  <nav class="tabs" id="tabs"></nav>
+</div>
+
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-panel" role="dialog" aria-modal="true">
+    <div class="agarre"><span style="width:34px"></span><i></i><button class="cerrar" data-a="cerrarSheet" aria-label="Cerrar">✕</button></div>
+    <div id="sheet-body"></div>
+  </div>
+</div>
+<div id="visor" class="visor" hidden data-a="cerrarVisor"><img alt=""></div>
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   RETO FIT · app (HTML + Supabase). Todo el código está en este archivo.
+   ===================================================================== */
+const CFG = window.RETO_CONFIG || {};
+const EMOJIS = ['💪','🔥','🐆','🦋','🌸','⚡','🍓','🌙','🏃‍♀️','🧘‍♀️','🥑','⭐','🦄','🍑','🌻','👑'];
+const DIAS = ['L','M','X','J','V','S','D'];
+const DIAS_C = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const DIAS_L = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+const TIPOS = ['Desayuno','Almuerzo','Merienda','Cena','Snack'];
+const ICON = {
+  hoy:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  ranking:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+  dieta:'<path d="M12 7.5c-2.2-2-6.5-1.6-6.5 3 0 5 3.2 10.5 6.5 10.5s6.5-5.5 6.5-10.5c0-4.6-4.3-5-6.5-3z"/><path d="M12 7.5c0-2.2 1.2-4.2 3.4-4.5"/>',
+  deuda:'<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2"/>',
+  premios:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12M12 8C10.5 5 7 5 7 7s3 1 5 1 5 1 5-1-3.5-2-5 1"/>'
+};
+const TABS = [['hoy','Hoy'],['ranking','Ranking'],['dieta','Dieta'],['deuda','Deuda'],['premios','Premios']];
+
+const S = { yo:null, cfg:{}, me:null, hoy:null, parts:new Map(), tab:'hoy', render:0, sem:null,
+            dietaFecha:null, dietaVista:'mias', rankOrden:'cumplidos', urls:new Map(), fotos:{}, ultimaCarga:0, modoAuth:'entrar' };
+let sb = null;
+
+/* ---------- utilidades ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const din = n => (S.cfg.moneda || '$') + Number(n || 0).toFixed(2);
+const D = {
+  add(iso, n){ const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); },
+  dow(iso){ const g = new Date(iso + 'T12:00:00Z').getUTCDay(); return g === 0 ? 7 : g; },
+  lunes(iso){ return D.add(iso, 1 - D.dow(iso)); },
+  fmt(iso, o){ return new Intl.DateTimeFormat('es', { timeZone:'UTC', ...o }).format(new Date(iso + 'T12:00:00Z')); },
+  corta(iso){ if (iso === S.hoy) return 'Hoy'; if (iso === D.add(S.hoy, -1)) return 'Ayer'; return D.fmt(iso, { weekday:'short', day:'numeric', month:'short' }); },
+  larga(iso){ const t = D.fmt(iso, { weekday:'long', day:'numeric', month:'long' }); return t.charAt(0).toUpperCase() + t.slice(1); },
+  rango(lun){ return D.fmt(lun, { day:'numeric', month:'short' }) + ' – ' + D.fmt(D.add(lun, 6), { day:'numeric', month:'short' }); },
+  hora(ts){ return new Date(ts).toLocaleTimeString('es', { hour:'numeric', minute:'2-digit' }); },
+  loc(ts){ const d = new Date(ts), z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`; }
+};
+const quien = id => S.parts.get(id) || { nombre:'Alguien', emoji:'🙂' };
+const plural = (n, s, p) => n === 1 ? s : (p || s + 's');
+
+function limpiar(m){
+  m = String(m || 'Error');
+  if (/JWT|jwt expired|refresh token/i.test(m)) return 'Tu sesión venció. Vuelve a entrar.';
+  if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Sin conexión. Revisa tu internet.';
+  if (/Invalid login credentials/i.test(m)) return 'Correo o contraseña incorrectos.';
+  if (/Email not confirmed/i.test(m)) return 'Falta confirmar tu correo (revisa tu bandeja).';
+  if (/User already registered/i.test(m)) return 'Ese correo ya tiene cuenta. Entra con tu contraseña.';
+  if (/Password should be/i.test(m)) return 'La contraseña debe tener al menos 6 caracteres.';
+  return m;
+}
+async function rpc(fn, args){ const { data, error } = await sb.rpc(fn, args || {}); if (error) throw new Error(limpiar(error.message)); return data; }
+async function q(p){ const { data, error } = await p; if (error) throw new Error(limpiar(error.message)); return data; }
+
+let tTimer;
+function toast(msg, tipo){
+  const t = $('#toast'); t.textContent = msg; t.className = 'toast ver' + (tipo ? ' ' + tipo : '');
+  clearTimeout(tTimer); tTimer = setTimeout(() => t.className = 'toast', tipo === 'error' ? 4200 : 2600);
+}
+async function ocupado(btn, fn){
+  if (btn) btn.classList.add('ocupado');
+  try { return await fn(); } catch (e) { toast(e.message, 'error'); } finally { if (btn) btn.classList.remove('ocupado'); }
+}
+function mostrar(v){ ['cargando','auth','unirse','config','msg','app'].forEach(x => $('#v-' + x).hidden = x !== v); }
+function mensaje(emo, tit, txt){ $('#m-emo').textContent = emo; $('#m-tit').textContent = tit; $('#m-txt').textContent = txt; mostrar('msg'); }
+
+/* ---------- fotos ---------- */
+async function comprimir(file, max = 1280, calidad = 0.72){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => mal(new Error('No se pudo leer la foto. Prueba con otra.')); i.src = url; });
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const cv = document.createElement('canvas'); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    return await new Promise((ok, mal) => cv.toBlob(b => b ? ok(b) : mal(new Error('No se pudo preparar la foto')), 'image/jpeg', calidad));
+  } finally { URL.revokeObjectURL(url); }
+}
+async function subirFoto(tipo, blob){
+  const ruta = `${S.me.id}/${tipo}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const { error } = await sb.storage.from('evidencias').upload(ruta, blob, { contentType:'image/jpeg', upsert:false });
+  if (error) throw new Error('No se pudo subir la foto: ' + limpiar(error.message));
+  return ruta;
+}
+async function hidratar(root = document){
+  const imgs = $$('img[data-path]', root); if (!imgs.length) return;
+  const ahora = Date.now();
+  const faltan = [...new Set(imgs.map(i => i.dataset.path))].filter(p => !S.urls.has(p) || ahora - S.urls.get(p).t > 50 * 60e3);
+  if (faltan.length){
+    const { data } = await sb.storage.from('evidencias').createSignedUrls(faltan, 3600);
+    (data || []).forEach(x => { if (x.signedUrl) S.urls.set(x.path, { u:x.signedUrl, t:ahora }); });
+  }
+  imgs.forEach(i => { const x = S.urls.get(i.dataset.path); if (x && i.getAttribute('src') !== x.u) i.src = x.u; });
+}
+const imgTag = (ruta, cls = 'foto') => `<img class="${cls}" data-path="${esc(ruta)}" data-a="verFoto" alt="" loading="lazy">`;
+const fotoPick = (clave, texto) => `<label class="foto-pick" data-foto="${clave}"><input type="file" accept="image/*"><div class="vacio-f"><b>📷</b>${esc(texto)}</div></label>`;
+
+document.addEventListener('change', async ev => {
+  const lab = ev.target.closest('.foto-pick'); if (!lab || !ev.target.files?.[0]) return;
+  const clave = lab.dataset.foto;
+  try {
+    lab.querySelector('.vacio-f').innerHTML = '<div class="spin"></div>';
+    const blob = await comprimir(ev.target.files[0]);
+    S.fotos[clave] = blob;
+    let img = lab.querySelector('img'); if (!img){ img = document.createElement('img'); lab.appendChild(img); }
+    img.src = URL.createObjectURL(blob); lab.classList.add('lista-f');
+  } catch (e) { toast(e.message, 'error'); lab.querySelector('.vacio-f').innerHTML = '<b>📷</b>Intenta otra vez'; }
+});
+
+/* ---------- hoja inferior y visor ---------- */
+function abrirSheet(html){
+  S.fotos = {};
+  $('#sheet-body').innerHTML = html;
+  const s = $('#sheet'); s.hidden = false; s.querySelector('.sheet-panel').scrollTop = 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('abierto')));
+  hidratar($('#sheet-body'));
+}
+function cerrarSheet(){
+  const s = $('#sheet'); s.classList.remove('abierto');
+  setTimeout(() => { if (!s.classList.contains('abierto')){ s.hidden = true; $('#sheet-body').innerHTML = ''; } }, 260);
+}
+$('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') cerrarSheet(); });
+
+/* ---------- arranque y sesión ---------- */
+async function iniciar(){
+  $$('.nombre-app').forEach(x => x.textContent = CFG.APP_NOMBRE || 'Reto Fit');
+  if (!CFG.SUPABASE_URL || /TU-PROYECTO/.test(CFG.SUPABASE_URL) || !window.supabase) return mostrar('config');
+  sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } });
+  sb.auth.onAuthStateChange(ev => {
+    if (ev === 'PASSWORD_RECOVERY') setTimeout(sheetNuevaClave, 400);
+    if (ev === 'SIGNED_OUT'){ S.me = null; mostrar('auth'); }
+  });
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) return mostrar('auth');
+  await entrar();
+}
+async function entrar(){
+  mostrar('cargando');
+  try {
+    await rpc('rf_procesar').catch(() => {});
+    S.yo = await rpc('rf_yo');
+    S.hoy = S.yo.hoy; S.cfg = S.yo.config || {}; S.me = S.yo.participante;
+    document.title = S.cfg.nombre_reto || 'Reto Fit';
+    if (!S.me){ $('#u-codigo').value = new URLSearchParams(location.search).get('codigo') || ''; return mostrar('unirse'); }
+    if (!S.me.activo) return mensaje('⏸️', 'Tu cuenta está en pausa', 'La administradora te desactivó del reto. Escríbele para volver.');
+    await cargarParticipantes();
+    $('#t-nombre').textContent = S.cfg.nombre_reto || 'Reto Fit';
+    $('#t-fecha').textContent = D.larga(S.hoy);
+    $('#t-yo').textContent = S.me.emoji || '💪';
+    S.ultimaCarga = Date.now();
+    mostrar('app'); irTab(S.tab);
+  } catch (e) { mensaje('😕', 'No se pudo cargar', e.message); }
+}
+async function cargarParticipantes(){
+  const filas = await q(sb.from('rf_participantes').select('id,nombre,emoji,es_admin,activo,alta'));
+  S.parts = new Map(filas.map(p => [p.id, p]));
+}
+async function refrescarSuave(){
+  if (!S.me || Date.now() - S.ultimaCarga < 60e3) return;
+  S.ultimaCarga = Date.now();
+  try { await rpc('rf_procesar'); const yo = await rpc('rf_yo'); S.hoy = yo.hoy; S.cfg = yo.config || S.cfg; $('#t-fecha').textContent = D.larga(S.hoy); irTab(S.tab); } catch {}
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescarSuave(); });
+
+$('#f-auth').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = $('#a-email').value.trim(), clave = $('#a-clave').value;
+  ocupado($('#a-btn'), async () => {
+    $('#a-msg').textContent = '';
+    if (S.modoAuth === 'crear'){
+      const { data, error } = await sb.auth.signUp({ email, password:clave, options:{ emailRedirectTo: location.origin + location.pathname } });
+      if (error) throw new Error(limpiar(error.message));
+      if (!data.session){ $('#a-msg').textContent = 'Te mandamos un correo para confirmar la cuenta. Ábrelo y luego entra aquí.'; return; }
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password:clave });
+      if (error) throw new Error(limpiar(error.message));
+    }
+    await entrar();
+  });
+});
+$('#u-emojis').innerHTML = EMOJIS.map((x, i) => `<button type="button" class="dchip${i === 0 ? ' on' : ''}" data-a="elegirEmoji" style="min-width:48px;font-size:22px">${x}</button>`).join('');
+$('#f-unirse').addEventListener('submit', e => {
+  e.preventDefault();
+  ocupado(e.submitter, async () => {
+    await rpc('rf_unirse', { p_nombre:$('#u-nombre').value, p_codigo:$('#u-codigo').value, p_emoji:$('#u-emojis .on')?.textContent || '💪' });
+    await entrar();
+  });
+});
+
+/* ---------- pestañas ---------- */
+$('#tabs').innerHTML = TABS.map(([k, t]) => `<button class="tab" data-a="tab" data-tab="${k}"><svg viewBox="0 0 24 24">${ICON[k]}</svg>${t}</button>`).join('');
+async function irTab(t){
+  S.tab = t;
+  $$('.tab').forEach(b => b.setAttribute('aria-current', b.dataset.tab === t ? 'page' : 'false'));
+  const main = $('#main'), yo = ++S.render;
+  if (!main.dataset.tab || main.dataset.tab !== t){ main.innerHTML = '<div class="esqueleto"></div><div class="esqueleto" style="height:200px"></div>'; window.scrollTo(0, 0); }
+  main.dataset.tab = t;
+  try {
+    await cargarParticipantes();
+    const html = await VISTA[t]();
+    if (yo !== S.render) return;
+    main.innerHTML = html; hidratar(main);
+  } catch (e) {
+    if (yo !== S.render) return;
+    main.innerHTML = `<div class="card center"><p style="font-size:34px">😕</p><p>${esc(e.message)}</p><br><button class="btn sec" data-a="tab" data-tab="${t}">Reintentar</button></div>`;
+  }
+}
+const recargar = () => irTab(S.tab);
+
+const VISTA = {};
+
+/* ===================== HOY ===================== */
+function estadoDia(f, elegido, sem){
+  const reg = sem.registros.find(r => r.fecha === f), en = sem.entrenos.find(e => e.fecha === f);
+  if (reg) return reg.estado;
+  if (en && en.estado !== 'rechazado') return elegido ? 'enviado' : 'extra';
+  if (en) return 'rechazado';
+  if (!elegido) return 'libre';
+  if (f < S.hoy) return 'pendiente';
+  return f === S.hoy ? 'hoy' : 'futuro';
+}
+async function cargarFeed(){
+  const ent = await q(sb.from('rf_entrenos').select('id,usuario,fecha,foto,nota,estado,motivo,creado').order('creado', { ascending:false }).limit(25));
+  const ids = ent.map(e => e.id);
+  const com = ids.length ? await q(sb.from('rf_comentarios').select('objeto_id').eq('tipo', 'entreno').in('objeto_id', ids)) : [];
+  const n = {}; com.forEach(c => n[c.objeto_id] = (n[c.objeto_id] || 0) + 1);
+  return ent.map(e => ({ ...e, ncom:n[e.id] || 0 }));
+}
+VISTA.hoy = async () => {
+  const [sem, feed] = await Promise.all([rpc('rf_mi_semana'), cargarFeed()]);
+  S.sem = sem; S.hoy = sem.hoy;
+  const c = S.cfg, gr = c.dias_gracia || 0, dow = D.dow(S.hoy), dias = sem.dias || [];
+  const ent = f => sem.entrenos.find(e => e.fecha === f);
+  const elegidoHoy = dias.includes(dow), eh = ent(S.hoy), multa = sem.proxima_multa?.monto;
+  let h = '';
+
+  if (!(window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) && /iPhone|iPad|iPod/.test(navigator.userAgent) && !localStorage.getItem('rf_inst'))
+    h += `<div class="aviso info"><span class="sp">📲 Instálala: botón <b>Compartir</b> → <b>Agregar a pantalla de inicio</b>.</span><button class="btn sm ghost" data-a="ocultarInst">✕</button></div>`;
+
+  // tarjeta principal
+  if (eh && eh.estado !== 'rechazado'){
+    const apr = eh.estado === 'aprobado', espera = c.requiere_aprobacion && !apr;
+    h += `<section class="hero listo"><div class="hero-emo">${espera ? '⏳' : '🎉'}</div>
+      <h2>${apr ? '¡Prueba aprobada!' : espera ? 'Prueba enviada' : '¡Hoy cumpliste!'}</h2>
+      <p>${espera ? 'Falta que otra participante la apruebe.' : elegidoHoy ? 'Día elegido cumplido. ¡Así se hace!' : 'Entrenamiento extra: suma en el ranking.'}</p>
+      <button class="btn blanco sm" data-a="subirEntreno" data-fecha="${S.hoy}">Cambiar foto</button></section>`;
+  } else if (eh){
+    h += `<section class="hero rechazo"><div class="hero-emo">🚩</div><h2>Te rechazaron la prueba</h2>
+      <p>${esc(eh.motivo || 'Sin motivo')}. Sube otra foto antes de que cierre el día.</p>
+      <button class="btn blanco" data-a="subirEntreno" data-fecha="${S.hoy}">📸 Subir otra prueba</button></section>`;
+  } else if (elegidoHoy){
+    h += `<section class="hero"><div class="hero-emo">🔥</div><h2>Hoy te toca entrenar</h2>
+      <p>Sube una foto como prueba. Si no, la falta es de <b>${din(multa)}</b>.</p>
+      <button class="btn blanco" data-a="subirEntreno" data-fecha="${S.hoy}">📸 Subir prueba de hoy</button></section>`;
+  } else if (!dias.length){
+    h += `<section class="hero elegir"><div class="hero-emo">🗓️</div><h2>Elige tus días</h2>
+      <p>Cada semana eliges ${c.dias_por_semana} ${plural(c.dias_por_semana, 'día')} para entrenar sí o sí.</p>
+      <button class="btn blanco" data-a="elegirDias">Elegir mis días</button></section>`;
+  } else {
+    h += `<section class="hero libre"><div class="hero-emo">😌</div><h2>Hoy es día libre</h2>
+      <p>Si entrenas igual, súbelo: cuenta en el ranking.</p>
+      <button class="btn sec" data-a="subirEntreno" data-fecha="${S.hoy}">📸 Subir entrenamiento extra</button></section>`;
+  }
+
+  // días anteriores todavía abiertos (gracia)
+  for (let k = 1; k <= gr; k++){
+    const f = D.add(S.hoy, -k); if (f <= sem.procesado_hasta) continue;
+    const dsem = D.lunes(f) === sem.semana ? dias : (sem.dias_ant || []);
+    const e = ent(f);
+    if (dsem.includes(D.dow(f)) && (!e || e.estado === 'rechazado'))
+      h += `<div class="aviso"><span class="sp">⏰ ¿Entrenaste ${k === 1 ? 'ayer' : 'el ' + DIAS_L[D.dow(f) - 1]}? Todavía puedes subir la prueba.</span><button class="btn sm pri" data-a="subirEntreno" data-fecha="${f}">Subir</button></div>`;
+  }
+
+  // semana
+  const celdas = DIAS.map((l, i) => {
+    const f = D.add(sem.semana, i), st = estadoDia(f, dias.includes(i + 1), sem);
+    const txt = { cumplido:'✓', enviado:'✓', extra:'✓', falta:'✕', rechazado:'!', anulada:'–' }[st] || +f.slice(8);
+    return `<div class="dia d-${st}${f === S.hoy ? ' d-esHoy' : ''}"><span>${l}</span><b class="bola">${txt}</b></div>`;
+  }).join('');
+  const sig = sem.dias_sig || dias;
+  h += `<div class="card"><div class="card-t"><h3>Esta semana</h3><button class="btn sm sec" data-a="elegirDias">Mis días</button></div>
+    <div class="semana">${celdas}</div>
+    <div class="leyenda"><span><i style="background:var(--ok)"></i>Cumplido</span><span><i style="border:2px dashed var(--acc)"></i>Te toca</span><span><i style="background:var(--warn)"></i>Pendiente</span><span><i style="background:var(--bad)"></i>Falta</span></div>
+    <p class="small muted" style="margin-top:10px">Próxima semana: <b>${sig.length ? sig.map(d => DIAS_C[d - 1]).join(', ') : 'sin elegir'}</b>${sem.dias_sig ? '' : sig.length ? ' (se repiten)' : ''}</p></div>`;
+
+  h += `<div class="stats"><button class="stat" data-a="tab" data-tab="deuda"><b${+sem.deuda > 0 ? ' style="color:var(--bad)"' : ''}>${din(sem.deuda)}</b><span>Tu deuda ›</span></button>
+    <div class="stat"><b>${din(multa)}</b><span>Próxima falta</span></div></div>`;
+
+  // grupo
+  h += `<h3 class="sec-t">Lo último del grupo</h3>`;
+  h += feed.length ? feed.map(postEntreno).join('') : `<div class="card vacio">Todavía nadie sube entrenamientos. ¡Sé la primera! 💥</div>`;
+  return h;
+};
+function postEntreno(e){
+  const p = quien(e.usuario), mio = e.usuario === S.me.id, abierto = e.fecha >= D.add(S.hoy, -(S.cfg.dias_gracia || 0));
+  const chip = e.estado === 'aprobado' ? '<span class="chip ok">✓ Aprobada</span>' : e.estado === 'rechazado' ? '<span class="chip bad">Rechazada</span>' : S.cfg.requiere_aprobacion ? '<span class="chip warn">Por aprobar</span>' : '';
+  let acc = '';
+  if (!mio && abierto){
+    if (S.cfg.requiere_aprobacion && e.estado !== 'aprobado') acc += `<button class="btn sm ok" data-a="revisarEntreno" data-id="${e.id}" data-ok="1">👍 Aprobar</button>`;
+    if (e.estado !== 'rechazado') acc += `<button class="btn sm ghost" data-a="revisarEntreno" data-id="${e.id}" data-ok="0">🚩 Rechazar</button>`;
+  }
+  return `<article class="post"><header><span class="av">${esc(p.emoji)}</span><div class="sp"><b>${esc(p.nombre)}</b>
+    <small>${e.fecha === S.hoy ? 'Entrenó hoy' : 'Entrenó · ' + D.corta(e.fecha)} · ${D.hora(e.creado)}</small></div>${chip}</header>
+    ${imgTag(e.foto)}${e.nota ? `<p class="nota">${esc(e.nota)}</p>` : ''}${e.estado === 'rechazado' && e.motivo ? `<p class="motivo">Motivo: ${esc(e.motivo)}</p>` : ''}
+    <footer>${acc}<span class="sp"></span><button class="btn sm ghost" data-a="detalle" data-tipo="entreno" data-id="${e.id}">💬 ${e.ncom || ''}</button></footer></article>`;
+}
+
+function sheetEntreno(fecha){
+  abrirSheet(`<h2>Prueba de entrenamiento</h2><p class="muted">Para el ${esc(D.larga(fecha))}</p>
+    ${fotoPick('entreno', 'Tomar o elegir foto')}
+    <label class="campo"><span>¿Qué hiciste? (opcional)</span><textarea class="inp" id="e-nota" maxlength="300" placeholder="Pierna en el gym, 5 km caminando…"></textarea></label>
+    <button class="btn pri" data-a="enviarEntreno" data-fecha="${fecha}">Enviar prueba</button>`);
+}
+
+function sheetDias(){
+  const sem = S.sem, n = S.cfg.dias_por_semana, dow = D.dow(S.hoy), prev = sem.dias || [];
+  const chips = (sel, bloquear) => DIAS_C.map((t, i) => {
+    const d = i + 1, on = sel.includes(d);
+    const dis = bloquear && ((d < dow && !on) || (d <= dow && on && prev.includes(d)));
+    return `<button class="dchip${on ? ' on' : ''}" data-a="toggleDia" data-d="${d}"${dis ? ' disabled' : ''}>${t}</button>`;
+  }).join('');
+  const reqAct = Math.min(n, prev.filter(d => d < dow).length + (8 - dow));
+  let h = `<h2>Tus días de entrenamiento</h2><p class="muted">Cada semana eliges ${n} ${plural(n, 'día')}. Si no eliges, se repiten los de la semana anterior.</p>`;
+  if (sem.puede_cambiar){
+    h += `<div class="card" style="margin-top:14px"><h3>Esta semana</h3><p class="small muted">${D.rango(sem.semana)} · elige ${reqAct}. Los días que ya pasaron no se cambian.</p>
+      <div class="opciones dgrupo" data-semana="${sem.semana}" data-req="${reqAct}" style="margin:12px 0">${chips(prev, true)}</div>
+      <button class="btn pri" data-a="guardarDias" data-semana="${sem.semana}">Guardar esta semana</button></div>`;
+  } else {
+    h += `<div class="card" style="margin-top:14px"><h3>Esta semana</h3><p class="small muted">${D.rango(sem.semana)}: <b>${prev.map(d => DIAS_C[d - 1]).join(', ') || '—'}</b>. Ya quedaron fijos.</p></div>`;
+  }
+  h += `<div class="card"><h3>Próxima semana</h3><p class="small muted">${D.rango(sem.siguiente)} · elige ${n}. Puedes cambiarlos hasta el domingo.</p>
+    <div class="opciones dgrupo" data-semana="${sem.siguiente}" data-req="${n}" style="margin:12px 0">${chips(sem.dias_sig || prev, false)}</div>
+    <button class="btn pri" data-a="guardarDias" data-semana="${sem.siguiente}">Guardar próxima semana</button></div>`;
+  abrirSheet(h);
+}
+
+/* ===================== RANKING ===================== */
+VISTA.ranking = async () => {
+  const filas = await rpc('rf_resumen'); S.resumen = filas;
+  const o = S.rankOrden;
+  const clave = { cumplidos:r => [r.cumplidos, -r.faltas, r.entrenos], pct:r => [r.pct ?? -1, r.cumplidos, -r.faltas], racha:r => [r.racha_semanas, r.cumplidos, -r.faltas], entrenos:r => [r.entrenos, r.cumplidos, -r.faltas] }[o];
+  filas.sort((a, b) => { const x = clave(a), y = clave(b); return (y[0] - x[0]) || (y[1] - x[1]) || (y[2] - x[2]) || a.nombre.localeCompare(b.nombre); });
+  const val = r => ({ cumplidos:r.cumplidos, pct:r.pct == null ? '—' : r.pct + '%', racha:r.racha_semanas, entrenos:r.entrenos })[o];
+  const unidad = { cumplidos:'días cumplidos', pct:'de cumplimiento', racha:'semanas seguidas', entrenos:'entrenos' }[o];
+  const pozo = filas.reduce((s, r) => s + +r.pagado, 0), cobrar = filas.reduce((s, r) => s + Math.max(+r.deuda, 0), 0);
+  let h = `<div class="seg">${[['cumplidos','Cumplidos'],['pct','%'],['racha','Racha'],['entrenos','Entrenos']].map(([k, t]) => `<button data-a="orden" data-o="${k}" aria-pressed="${k === o}">${t}</button>`).join('')}</div>`;
+  if (filas.length){
+    const top = [filas[1], filas[0], filas[2]];
+    h += `<div class="podio">${top.map((r, i) => r ? `<div class="pod p${[2,1,3][i]}"><div class="av">${esc(r.emoji)}</div><b>${esc(r.nombre)}</b><div class="base"><div class="num">${val(r)}</div>${[2,1,3][i]}°</div></div>` : '<div></div>').join('')}</div>`;
+  }
+  h += `<p class="small muted center" style="margin:-6px 0 12px">Ordenado por ${unidad}</p><div class="lista">` + filas.map((r, i) => `<div class="item">
+    <span class="pos">${i + 1}</span><span class="av">${esc(r.emoji)}</span>
+    <div class="txt"><b>${esc(r.nombre)}${r.id === S.me.id ? ' <span class="chip acc">Tú</span>' : ''}</b>
+    <small>✓ ${r.cumplidos} · ✕ ${r.faltas} · 🏋️ ${r.entrenos} · ${r.pct == null ? '—' : r.pct + '%'} · 🔥 ${r.racha_semanas} sem${r.racha_meses ? ' · ⭐ ' + r.racha_meses + ' ' + plural(r.racha_meses, 'mes', 'meses') : ''}</small></div>
+    <span class="monto num" style="font-size:20px">${val(r)}</span></div>`).join('') + `</div>`;
+  h += `<div class="card"><h3 style="margin-bottom:10px">💰 Pozo del reto</h3><div class="pozo">
+    <div><b class="num">${din(pozo)}</b><span class="small muted">en la cuenta (pagos confirmados)</span></div>
+    <div><b class="num" style="color:var(--bad)">${din(cobrar)}</b><span class="small muted">deudas por cobrar</span></div></div>
+    <p class="small muted" style="margin-top:10px">Es para gastarlo juntas. 🍦</p></div>`;
+  return h;
+};
+
+/* ===================== DIETA ===================== */
+VISTA.dieta = async () => {
+  const f = S.dietaFecha || S.hoy;
+  const comidas = await q(sb.from('rf_comidas').select('id,usuario,fecha,tipo,descripcion,foto,calificacion,creado').eq('fecha', f).order('creado'));
+  const ids = comidas.map(c => c.id);
+  const com = ids.length ? await q(sb.from('rf_comentarios').select('objeto_id').eq('tipo', 'comida').in('objeto_id', ids)) : [];
+  const nc = {}; com.forEach(c => nc[c.objeto_id] = (nc[c.objeto_id] || 0) + 1);
+  S.comidas = comidas;
+  const mias = comidas.filter(c => c.usuario === S.me.id), editable = f >= D.add(S.hoy, -7);
+  const fila = (c, mio) => `<div class="item" data-a="detalle" data-tipo="comida" data-id="${c.id}">${imgTag(c.foto, 'mini')}
+    <div class="txt"><b>${esc(c.tipo)} <span class="chip ${c.calificacion === 'buena' ? 'ok' : 'bad'}">${c.calificacion === 'buena' ? '👍 Buena' : '👎 Mala'}</span></b>
+    <small>${esc(c.descripcion || 'Sin descripción')}</small></div>
+    ${nc[c.id] ? `<span class="chip">💬 ${nc[c.id]}</span>` : ''}${mio && editable ? `<button class="btn sm ghost" data-a="editarComida" data-id="${c.id}">✎</button>` : ''}</div>`;
+  let h = `<div class="fechanav"><button class="circ" data-a="dietaDia" data-d="-1" aria-label="Día anterior">‹</button><b>${esc(f === S.hoy ? 'Hoy' : D.larga(f))}</b>
+    <button class="circ" data-a="dietaDia" data-d="1" aria-label="Día siguiente"${f >= S.hoy ? ' disabled' : ''}>›</button></div>
+    <div class="seg"><button data-a="dietaVista" data-v="mias" aria-pressed="${S.dietaVista === 'mias'}">Mis comidas</button><button data-a="dietaVista" data-v="grupo" aria-pressed="${S.dietaVista === 'grupo'}">Del grupo</button></div>`;
+  if (S.dietaVista === 'mias'){
+    const b = mias.filter(c => c.calificacion === 'buena').length;
+    h += `<div class="stats"><div class="stat"><b style="color:var(--ok)">👍 ${b}</b><span>buenas</span></div><div class="stat"><b style="color:var(--bad)">👎 ${mias.length - b}</b><span>malas</span></div></div>`;
+    h += mias.length ? `<div class="lista">${mias.map(c => fila(c, true)).join('')}</div>` : `<div class="card vacio">No hay comidas registradas este día.</div>`;
+    if (editable) h += `<button class="btn pri" data-a="nuevaComida">＋ Agregar comida</button>`;
+    h += `<p class="small muted center" style="margin-top:14px">La dieta no suma ni resta: es para apoyarnos. 💚</p>`;
+  } else {
+    const por = new Map(); comidas.forEach(c => { if (!por.has(c.usuario)) por.set(c.usuario, []); por.get(c.usuario).push(c); });
+    h += por.size ? [...por].map(([u, cs]) => { const p = quien(u), b = cs.filter(c => c.calificacion === 'buena').length;
+      return `<h3 class="sec-t">${esc(p.emoji)} ${esc(p.nombre)} · 👍 ${b} · 👎 ${cs.length - b}</h3><div class="lista">${cs.map(c => fila(c, u === S.me.id)).join('')}</div>`; }).join('')
+      : `<div class="card vacio">Nadie registró comidas este día.</div>`;
+  }
+  return h;
+};
+function sheetComida(c){
+  const tipo = c?.tipo || TIPOS[Math.min(3, Math.floor((new Date().getHours() - 5) / 4.5))] || 'Snack';
+  const cal = c?.calificacion || 'buena';
+  abrirSheet(`<h2>${c ? 'Editar comida' : 'Nueva comida'}</h2><p class="muted">${esc(D.larga(c?.fecha || S.dietaFecha || S.hoy))}</p>
+    <div class="campo"><span>Comida</span><div class="opciones" id="c-tipo">${TIPOS.map(t => `<button class="dchip${t === tipo ? ' on' : ''}" data-a="unaOpcion">${t}</button>`).join('')}</div></div>
+    ${c ? `<div class="foto-pick lista-f" data-foto="comida" style="pointer-events:none">${imgTag(c.foto)}</div><label class="btn sm sec" style="position:relative;margin-top:-6px">Cambiar foto<input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0" data-cambiar-foto></label>` : fotoPick('comida', 'Foto de la comida')}
+    <label class="campo"><span>¿Qué comiste? (opcional)</span><textarea class="inp" id="c-desc" maxlength="300">${esc(c?.descripcion || '')}</textarea></label>
+    <div class="campo"><span>¿Cómo estuvo?</span><div class="opciones" id="c-cal">
+      <button class="dchip buena${cal === 'buena' ? ' on' : ''}" data-a="unaOpcion" data-v="buena">👍 Buena</button>
+      <button class="dchip mala${cal === 'mala' ? ' on' : ''}" data-a="unaOpcion" data-v="mala">👎 Mala</button></div></div>
+    <button class="btn pri" data-a="guardarComida" data-id="${c?.id || ''}" data-fecha="${c?.fecha || S.dietaFecha || S.hoy}">Guardar</button>
+    ${c ? `<button class="btn ghost" style="margin-top:8px" data-a="borrarComida" data-id="${c.id}">Borrar comida</button>` : ''}`);
+}
+document.addEventListener('change', async ev => {
+  if (!ev.target.matches('[data-cambiar-foto]') || !ev.target.files?.[0]) return;
+  try { const blob = await comprimir(ev.target.files[0]); S.fotos.comida = blob; const img = $('#sheet-body .foto-pick img'); img.removeAttribute('data-path'); img.src = URL.createObjectURL(blob); }
+  catch (e) { toast(e.message, 'error'); }
+});
+
+/* ===================== DEUDA ===================== */
+VISTA.deuda = async () => {
+  const yo = S.me.id;
+  const [res, faltas, pagos, ajustes] = await Promise.all([
+    rpc('rf_resumen'),
+    q(sb.from('rf_dias').select('fecha,estado,monto,tramo,motivo').eq('usuario', yo).in('estado', ['falta','anulada']).order('fecha', { ascending:false }).limit(80)),
+    q(sb.from('rf_pagos').select('id,usuario,monto,foto,nota,estado,creado').order('creado', { ascending:false }).limit(80)),
+    q(sb.from('rf_ajustes').select('monto,motivo,creado').eq('usuario', yo).order('creado', { ascending:false }))
+  ]);
+  S.resumen = res;
+  const r = res.find(x => x.id === yo) || { deuda:0, por_confirmar:0, proxima_multa:0 };
+  S.miDeuda = r;
+  const porRevisar = pagos.filter(p => p.estado === 'pendiente' && (p.usuario !== yo || S.me.es_admin));
+  const misPagos = pagos.filter(p => p.usuario === yo);
+  const estChip = e => e === 'confirmado' ? '<span class="chip ok">Confirmado</span>' : e === 'rechazado' ? '<span class="chip bad">Rechazado</span>' : '<span class="chip warn">Por confirmar</span>';
+  let h = `<div class="card center" style="padding:22px 16px"><p class="muted" style="font-weight:700">Tu deuda</p>
+    <p class="num" style="font-size:52px;font-weight:800;color:${+r.deuda > 0 ? 'var(--bad)' : 'var(--ok)'}">${din(r.deuda)}</p>
+    ${+r.por_confirmar > 0 ? `<p class="small muted">${din(r.por_confirmar)} en pagos por confirmar</p>` : ''}
+    <p class="small muted">Tu próxima falta vale <b>${din(r.proxima_multa)}</b></p>
+    <button class="btn pri" style="margin-top:14px" data-a="pagar">💸 Pagar multa</button></div>`;
+  if (S.cfg.cuenta_reto) h += `<div class="card"><div class="card-t"><h3>🏦 Cuenta del reto</h3><button class="btn sm sec" data-a="copiarCuenta">Copiar</button></div><p style="white-space:pre-wrap">${esc(S.cfg.cuenta_reto)}</p></div>`;
+  if (porRevisar.length){
+    h += `<h3 class="sec-t">Pagos por confirmar</h3><div class="lista">` + porRevisar.map(p => { const w = quien(p.usuario); return `<div class="item">${imgTag(p.foto, 'mini')}
+      <div class="txt"><b>${esc(w.emoji)} ${esc(w.nombre)} · ${din(p.monto)}</b><small>${D.corta(D.loc(p.creado))}${p.nota ? ' · ' + esc(p.nota) : ''}</small>
+      <div class="row" style="margin-top:8px"><button class="btn sm ok" data-a="revisarPago" data-id="${p.id}" data-ok="1">Confirmar</button><button class="btn sm ghost" data-a="revisarPago" data-id="${p.id}" data-ok="0">Rechazar</button></div></div></div>`; }).join('') + `</div>`;
+  }
+  const deudas = res.filter(x => +x.deuda > 0).sort((a, b) => b.deuda - a.deuda);
+  h += `<h3 class="sec-t">Deudas del grupo</h3><div class="lista">` + (deudas.length ? deudas.map(x => `<div class="item"><span class="av">${esc(x.emoji)}</span><div class="txt"><b>${esc(x.nombre)}</b>${+x.por_confirmar > 0 ? `<small>${din(x.por_confirmar)} por confirmar</small>` : ''}</div><span class="monto" style="color:var(--bad)">${din(x.deuda)}</span></div>`).join('') : `<div class="vacio">Nadie debe nada. 🙌</div>`) + `</div>`;
+  h += `<h3 class="sec-t">Tus faltas</h3><div class="lista">` + (faltas.length ? faltas.map(f => `<div class="item"><span class="av">${f.estado === 'anulada' ? '🩹' : '✕'}</span>
+    <div class="txt"><b>${esc(D.larga(f.fecha))}</b><small>${f.estado === 'anulada' ? 'Anulada' + (f.motivo ? ': ' + esc(f.motivo) : '') : 'Tramo ' + (f.tramo + 1)}</small></div>
+    <span class="monto"${f.estado === 'anulada' ? ' style="text-decoration:line-through;color:var(--muted)"' : ''}>${din(f.monto)}</span></div>`).join('') : `<div class="vacio">Sin faltas. ¡Bien! 💪</div>`) + `</div>`;
+  h += `<h3 class="sec-t">Tus pagos</h3><div class="lista">` + (misPagos.length ? misPagos.map(p => `<div class="item">${imgTag(p.foto, 'mini')}<div class="txt"><b>${din(p.monto)}</b><small>${D.corta(D.loc(p.creado))}${p.nota ? ' · ' + esc(p.nota) : ''}</small></div>${estChip(p.estado)}</div>`).join('') : `<div class="vacio">Todavía no hay pagos.</div>`) + `</div>`;
+  if (ajustes.length) h += `<h3 class="sec-t">Premios y ajustes</h3><div class="lista">` + ajustes.map(a => `<div class="item"><span class="av">🎁</span><div class="txt"><b>${esc(a.motivo)}</b><small>${D.corta(D.loc(a.creado))}</small></div><span class="monto" style="color:var(--ok)">${+a.monto > 0 ? '−' : '+'}${din(Math.abs(a.monto))}</span></div>`).join('') + `</div>`;
+  return h;
+};
+function sheetPagar(){
+  const r = S.miDeuda || { deuda:0, por_confirmar:0 };
+  const sug = Math.max(+r.deuda - +r.por_confirmar, 0);
+  abrirSheet(`<h2>Pagar multa</h2><p class="muted">Haz la transferencia a la cuenta del reto y sube la foto del comprobante. Otra participante la confirma.</p>
+    ${S.cfg.cuenta_reto ? `<div class="card" style="margin-top:12px"><p class="small muted" style="font-weight:700">Cuenta del reto</p><p style="white-space:pre-wrap">${esc(S.cfg.cuenta_reto)}</p></div>` : ''}
+    <label class="campo"><span>Monto (${esc(S.cfg.moneda || '$')})</span><input class="inp" id="p-monto" inputmode="decimal" value="${sug ? sug.toFixed(2) : ''}" placeholder="0.00"></label>
+    ${fotoPick('pago', 'Foto del comprobante')}
+    <label class="campo"><span>Nota (opcional)</span><input class="inp" id="p-nota" maxlength="200" placeholder="Yappy, transferencia…"></label>
+    <button class="btn pri" data-a="enviarPago">Enviar pago</button>`);
+}
+
+/* ===================== PREMIOS ===================== */
+VISTA.premios = async () => {
+  const ini = S.hoy.slice(0, 8) + '01';
+  const [est, canjes, mes] = await Promise.all([
+    rpc('rf_premios_estado'),
+    q(sb.from('rf_canjes').select('usuario,premio_nombre,meses,fecha,monto_borrado').order('creado', { ascending:false }).limit(40)),
+    q(sb.from('rf_dias').select('estado').eq('usuario', S.me.id).gte('fecha', ini))
+  ]);
+  const racha = est.racha, ok = mes.filter(d => d.estado === 'cumplido').length, mal = mes.filter(d => d.estado === 'falta').length;
+  const metas = [...new Set(est.premios.map(p => p.meses))].sort((a, b) => a - b);
+  const prox = metas.find(m => m > racha);
+  let h = `<div class="card racha"><div class="num">${racha}</div><p style="font-weight:700;margin-top:6px">${plural(racha, 'mes seguido', 'meses seguidos')} sin faltar</p>
+    ${prox ? `<div class="barra"><i style="width:${Math.round(100 * racha / prox)}%"></i></div><p class="small muted">${prox - racha} ${plural(prox - racha, 'mes', 'meses')} más para el premio de ${prox} ${plural(prox, 'mes', 'meses')}</p>` : ''}
+    <p class="small muted" style="margin-top:12px">Este mes: ✓ ${ok} · ✕ ${mal} — ${mal ? 'ya hubo falta, la racha vuelve a empezar el próximo mes.' : ok ? '¡vas perfecto!' : 'todavía sin días cerrados.'}</p></div>`;
+  for (const m of metas){
+    const ps = est.premios.filter(p => p.meses === m), disp = ps[0].disponibles;
+    h += `<h3 class="sec-t">${m} ${plural(m, 'mes seguido', 'meses seguidos')} ${disp ? `<span class="chip ok">${disp} ${plural(disp, 'disponible')}${ps.length > 1 ? ' · elige' : ''}</span>` : ''}</h3>`;
+    h += ps.map(p => `<div class="card premio"><div class="ico">${p.accion === 'borrar_deuda' ? '🧽' : m >= 3 ? '🏆' : '🎁'}</div><div class="sp"><h3>${esc(p.nombre)}</h3>
+      ${p.descripcion ? `<p class="small muted">${esc(p.descripcion)}</p>` : ''}
+      ${disp ? `<button class="btn sm pri" style="margin-top:10px" data-a="canjear" data-id="${p.id}" data-nombre="${esc(p.nombre)}">Canjear</button>` : `<p class="small muted" style="margin-top:6px">🔒 Se gana con ${m} ${plural(m, 'mes completo', 'meses completos')} sin faltar</p>`}</div></div>`).join('');
+  }
+  if (!metas.length) h += `<div class="card vacio">La administradora todavía no cargó premios.</div>`;
+  h += `<h3 class="sec-t">Premios canjeados</h3><div class="lista">` + (canjes.length ? canjes.map(c => { const p = quien(c.usuario); return `<div class="item"><span class="av">${esc(p.emoji)}</span><div class="txt"><b>${esc(p.nombre)}</b><small>${esc(c.premio_nombre)} · ${D.corta(c.fecha)}${+c.monto_borrado ? ' · borró ' + din(c.monto_borrado) : ''}</small></div></div>`; }).join('') : `<div class="vacio">Todavía nadie canjeó premios.</div>`) + `</div>`;
+  h += `<p class="small muted center">Un mes cuenta cuando cumpliste todos tus días elegidos de ese mes.</p>`;
+  return h;
+};
+
+/* ===================== DETALLE + COMENTARIOS ===================== */
+async function abrirDetalle(tipo, id){
+  const tabla = tipo === 'entreno' ? 'rf_entrenos' : 'rf_comidas';
+  const [it, com] = await Promise.all([
+    q(sb.from(tabla).select('*').eq('id', id).single()),
+    q(sb.from('rf_comentarios').select('id,usuario,texto,creado').eq('tipo', tipo).eq('objeto_id', id).order('creado'))
+  ]);
+  const p = quien(it.usuario);
+  const titulo = tipo === 'entreno' ? 'Entrenamiento · ' + D.corta(it.fecha) : `${it.tipo} · ${it.calificacion === 'buena' ? '👍 Buena' : '👎 Mala'}`;
+  abrirSheet(`<div class="row" style="margin-bottom:10px"><span class="av">${esc(p.emoji)}</span><div><b>${esc(p.nombre)}</b><div class="small muted">${esc(titulo)}</div></div></div>
+    <div class="post" style="margin-bottom:10px">${imgTag(it.foto)}${(it.nota || it.descripcion) ? `<p class="nota" style="padding-bottom:12px">${esc(it.nota || it.descripcion)}</p>` : ''}</div>
+    <h3 style="margin:16px 0 4px">Comentarios</h3>
+    <div>${com.length ? com.map(c => { const w = quien(c.usuario); return `<div class="comentario"><b>${esc(w.emoji)} ${esc(w.nombre)}</b> <small>${D.corta(D.loc(c.creado))} ${D.hora(c.creado)}</small>
+      ${c.usuario === S.me.id || S.me.es_admin ? `<button class="link small" style="float:right;padding:0;color:var(--muted)" data-a="borrarComentario" data-id="${c.id}" data-tipo="${tipo}" data-obj="${id}">Borrar</button>` : ''}<div>${esc(c.texto)}</div></div>`; }).join('') : '<p class="small muted" style="padding:6px 0">Sé la primera en dar ánimo. 💬</p>'}</div>
+    <div class="row" style="margin-top:12px"><input class="inp" id="com-txt" maxlength="500" placeholder="Escribe algo bonito…" enterkeyhint="send">
+    <button class="btn pri sm" style="min-height:50px" data-a="comentar" data-tipo="${tipo}" data-id="${id}">Enviar</button></div>`);
+}
+
+/* ===================== AJUSTES Y ADMIN ===================== */
+function textoReglas(c){
+  const ej = []; for (let t = 0; t < 4; t++){ let m = c.multa_base * Math.pow(c.factor_tramo, t); if (c.multa_maxima != null) m = Math.min(m, c.multa_maxima); ej.push(din(m)); }
+  return `<ul class="reglas">
+    <li>Cada semana eliges <b>${c.dias_por_semana} ${plural(c.dias_por_semana, 'día')}</b> para entrenar sí o sí, a la hora que quieras.</li>
+    <li>Un día cuenta solo si subes una <b>foto de prueba</b>${c.dias_gracia ? ` (tienes hasta ${c.dias_gracia} ${plural(c.dias_gracia, 'día')} después para subirla)` : ''}${c.requiere_aprobacion ? ' y otra participante la aprueba' : ''}.</li>
+    <li>Cada falta suma multa: <b>${ej.join(' → ')}</b>… La multa sube cada ${c.faltas_por_tramo} faltas${c.reinicio_mensual ? ' dentro del mismo mes (cada mes vuelve a empezar)' : ''}.</li>
+    <li>Las multas se pagan a la cuenta del reto subiendo el comprobante.</li>
+    <li>Cumplir meses completos sin faltar da premios (ver pestaña Premios).</li>
+    ${c.cambiar_semana_en_curso ? '<li>Puedes mover días de la semana actual que todavía no pasaron.</li>' : '<li>Los días de la semana en curso quedan fijos; los de la próxima se pueden cambiar.</li>'}</ul>`;
+}
+function sheetAjustes(){
+  const c = S.cfg;
+  abrirSheet(`<h2>Ajustes</h2>
+    <div class="card" style="margin-top:12px"><h3>Tu perfil</h3>
+      <label class="campo"><span>Nombre</span><input class="inp" id="aj-nombre" maxlength="40" value="${esc(S.me.nombre)}"></label>
+      <div class="opciones" id="aj-emoji">${EMOJIS.map(x => `<button class="dchip${x === S.me.emoji ? ' on' : ''}" data-a="unaOpcion" style="min-width:48px;font-size:22px">${x}</button>`).join('')}</div>
+      <button class="btn sec" style="margin-top:12px" data-a="guardarPerfil">Guardar perfil</button></div>
+    <div class="card"><h3>Reglas del reto</h3>${textoReglas(c)}</div>
+    <div class="card"><details><summary>📲 Instalar en el iPhone</summary><ol class="pasos">
+      <li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (cuadrado con flecha).</li><li>Elige <b>Agregar a pantalla de inicio</b> → <b>Agregar</b>.</li>
+      <li>Ábrela desde el ícono y entra una vez con tu correo.</li></ol></details></div>
+    ${S.me.es_admin ? `<button class="btn sec" data-a="admin">⚙️ Administrar el reto</button>` : ''}
+    <button class="btn ghost" style="margin-top:10px" data-a="salir">Cerrar sesión</button>
+    <p class="small muted center" style="margin-top:8px">${esc(S.yo?.email || '')}</p>`);
+}
+async function sheetAdmin(){
+  const [yo, parts, premios, faltas] = await Promise.all([
+    rpc('rf_yo'), rpc('rf_admin_participantes'),
+    q(sb.from('rf_premios').select('*').order('meses').order('orden')),
+    q(sb.from('rf_dias').select('usuario,fecha,monto').eq('estado', 'falta').order('fecha', { ascending:false }).limit(40))
+  ]);
+  const c = S.cfg = yo.config;
+  const sw = (k, t, s) => `<label class="switch"><input type="checkbox" id="cf-${k}"${c[k] ? ' checked' : ''}><span>${t}<small>${s}</small></span></label>`;
+  const num = (k, t, extra = '') => `<label class="campo"><span>${t}</span><input class="inp" id="cf-${k}" inputmode="decimal" value="${c[k] ?? ''}" ${extra}></label>`;
+  abrirSheet(`<h2>Administrar el reto</h2>
+    <div class="card" style="margin-top:12px"><h3>Invitar</h3><p class="small muted">Comparte el enlace y el código. Cada una crea su cuenta y entra con el código.</p>
+      <div class="codigo">${esc(c.codigo)}</div><button class="btn pri" data-a="compartir">Compartir invitación</button></div>
+
+    <div class="card"><h3>Reglas</h3>
+      <label class="campo"><span>Nombre del reto</span><input class="inp" id="cf-nombre_reto" value="${esc(c.nombre_reto)}"></label>
+      ${num('dias_por_semana', 'Días a elegir por semana', 'inputmode="numeric"')}
+      ${num('multa_base', 'Multa inicial por falta')}
+      ${num('faltas_por_tramo', 'Cada cuántas faltas sube la multa', 'inputmode="numeric"')}
+      ${num('factor_tramo', 'La multa se multiplica por (2 = se duplica)')}
+      ${num('multa_maxima', 'Multa máxima (vacío = sin tope)')}
+      ${num('dias_gracia', 'Días extra para subir la prueba (0 a 3)', 'inputmode="numeric"')}
+      ${sw('reinicio_mensual', 'Las multas vuelven al monto inicial cada mes', 'Si está apagado, solo vuelven al inicial con el premio de borrar deuda.')}
+      ${sw('requiere_aprobacion', 'La prueba necesita aprobación', 'Otra participante debe aprobarla para que cuente.')}
+      ${sw('cambiar_semana_en_curso', 'Permitir mover días de la semana actual', 'Solo días que todavía no pasaron.')}
+      <label class="campo"><span>Datos de la cuenta del reto (se muestran al pagar)</span><textarea class="inp" id="cf-cuenta_reto" placeholder="Banco, tipo de cuenta, número, nombre…">${esc(c.cuenta_reto || '')}</textarea></label>
+      <label class="campo"><span>Moneda</span><input class="inp" id="cf-moneda" value="${esc(c.moneda)}" maxlength="4"></label>
+      <label class="campo"><span>Código del grupo</span><input class="inp" id="cf-codigo" value="${esc(c.codigo)}" autocapitalize="characters"></label>
+      <button class="btn pri" data-a="guardarConfig">Guardar reglas</button></div>
+
+    <div class="card"><h3>Premios</h3><div id="ad-premios">${premios.map(p => `<div class="item" style="padding:10px 0"><div class="txt"><b>${esc(p.nombre)}${p.activo ? '' : ' <span class="chip">Apagado</span>'}</b>
+      <small>${p.meses} ${plural(p.meses, 'mes', 'meses')}${p.accion === 'borrar_deuda' ? ' · borra la deuda' : ''}</small></div>
+      <button class="btn sm sec" data-a="editarPremio" data-p='${esc(JSON.stringify(p))}'>Editar</button></div>`).join('') || '<p class="small muted">Sin premios.</p>'}</div>
+      <button class="btn sec" style="margin-top:10px" data-a="editarPremio">＋ Nuevo premio</button></div>
+
+    <div class="card"><h3>Participantes</h3>${parts.map(p => `<div class="item" style="padding:12px 0;flex-wrap:wrap"><span class="av">${esc(p.emoji)}</span>
+      <div class="txt"><b>${esc(p.nombre)}</b><small>${esc(p.email || '')}</small></div>
+      <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px" data-part="${p.id}">
+        <label class="switch" style="border:0;padding:4px 0"><input type="checkbox" data-k="activo"${p.activo ? ' checked' : ''}><span>Activa</span></label>
+        <label class="switch" style="border:0;padding:4px 0"><input type="checkbox" data-k="es_admin"${p.es_admin ? ' checked' : ''}><span>Admin</span></label>
+        <label class="campo" style="margin:0;grid-column:1/-1"><span>Participa desde</span><input class="inp" type="date" data-k="alta" value="${p.alta}"></label>
+        <button class="btn sm sec" style="grid-column:1/-1;width:100%" data-a="guardarPart" data-id="${p.id}">Guardar</button></div></div>`).join('')}</div>
+
+    <div class="card"><h3>Corregir faltas</h3><p class="small muted">Anular deja la falta en ${din(0)} (por ejemplo, si fue un error).</p>
+      ${faltas.map(f => { const w = quien(f.usuario); return `<div class="item" style="padding:10px 0"><span class="av">${esc(w.emoji)}</span><div class="txt"><b>${esc(w.nombre)}</b><small>${esc(D.larga(f.fecha))} · ${din(f.monto)}</small></div>
+        <button class="btn sm ghost" data-a="anularFalta" data-u="${f.usuario}" data-f="${f.fecha}">Anular</button></div>`; }).join('') || '<p class="small muted">No hay faltas.</p>'}</div>
+
+    <div class="card"><h3>Ajuste de deuda</h3><p class="small muted">Positivo baja la deuda; negativo la sube.</p>
+      <label class="campo"><span>Participante</span><select class="inp" id="aj-u">${parts.map(p => `<option value="${p.id}">${esc(p.emoji)} ${esc(p.nombre)}</option>`).join('')}</select></label>
+      <label class="campo"><span>Monto</span><input class="inp" id="aj-m" inputmode="decimal" placeholder="1.00 o -1.00"></label>
+      <label class="campo"><span>Motivo</span><input class="inp" id="aj-mot" maxlength="200"></label>
+      <button class="btn sec" data-a="ajuste">Guardar ajuste</button></div>`);
+}
+function sheetPremio(p){
+  abrirSheet(`<h2>${p ? 'Editar premio' : 'Nuevo premio'}</h2>
+    <label class="campo"><span>Nombre</span><input class="inp" id="pr-n" maxlength="80" value="${esc(p?.nombre || '')}"></label>
+    <label class="campo"><span>Descripción</span><textarea class="inp" id="pr-d" maxlength="300">${esc(p?.descripcion || '')}</textarea></label>
+    <label class="campo"><span>Meses seguidos sin faltar</span><input class="inp" id="pr-m" inputmode="numeric" value="${p?.meses || 1}"></label>
+    <label class="campo"><span>Orden</span><input class="inp" id="pr-o" inputmode="numeric" value="${p?.orden || 0}"></label>
+    <label class="switch"><input type="checkbox" id="pr-b"${p?.accion === 'borrar_deuda' ? ' checked' : ''}><span>Borra la deuda y reinicia las multas<small>Al canjearlo, la deuda pendiente queda en cero.</small></span></label>
+    <label class="switch"><input type="checkbox" id="pr-a"${!p || p.activo ? ' checked' : ''}><span>Activo</span></label>
+    <button class="btn pri" style="margin-top:10px" data-a="guardarPremio" data-id="${p?.id || ''}">Guardar premio</button>`);
+}
+function sheetNuevaClave(){
+  abrirSheet(`<h2>Nueva contraseña</h2><label class="campo"><span>Escribe tu nueva contraseña</span><input class="inp" id="nc" type="password" minlength="6" autocomplete="new-password"></label>
+    <button class="btn pri" data-a="guardarClave">Guardar</button>`);
+}
+
+/* ===================== ACCIONES ===================== */
+const A = {
+  tab:(el) => { if (S.tab === el.dataset.tab) window.scrollTo({ top:0, behavior:'smooth' }); irTab(el.dataset.tab); },
+  cerrarSheet, recargar:() => entrar(),
+  verFoto:(el) => { if (!el.src) return; const v = $('#visor'); v.querySelector('img').src = el.src; v.hidden = false; },
+  cerrarVisor:() => { $('#visor').hidden = true; },
+  ocultarInst:(el) => { localStorage.setItem('rf_inst', '1'); el.closest('.aviso').remove(); },
+  authModo:() => {
+    S.modoAuth = S.modoAuth === 'entrar' ? 'crear' : 'entrar';
+    const c = S.modoAuth === 'crear';
+    $('#a-btn').textContent = c ? 'Crear cuenta' : 'Entrar';
+    $('#a-modo').textContent = c ? '¿Ya tienes cuenta? Entrar' : '¿No tienes cuenta? Crear cuenta';
+    $('#a-clave').autocomplete = c ? 'new-password' : 'current-password'; $('#a-msg').textContent = '';
+  },
+  olvide:(el) => ocupado(el, async () => {
+    const email = $('#a-email').value.trim(); if (!email) throw new Error('Escribe tu correo arriba primero.');
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    if (error) throw new Error(limpiar(error.message));
+    $('#a-msg').textContent = 'Te mandamos un correo para cambiar la contraseña.';
+  }),
+  guardarClave:(el) => ocupado(el, async () => {
+    const { error } = await sb.auth.updateUser({ password:$('#nc').value }); if (error) throw new Error(limpiar(error.message));
+    cerrarSheet(); toast('Contraseña cambiada ✓'); history.replaceState(null, '', location.pathname); entrar();
+  }),
+  salir:async () => { cerrarSheet(); await sb.auth.signOut(); S.me = null; mostrar('auth'); },
+  elegirEmoji:(el) => { $$('#u-emojis .dchip').forEach(b => b.classList.remove('on')); el.classList.add('on'); },
+  unaOpcion:(el) => { $$('.dchip', el.parentElement).forEach(b => b.classList.remove('on')); el.classList.add('on'); },
+  ajustes:sheetAjustes,
+  admin:(el) => ocupado(el, sheetAdmin),
+
+  subirEntreno:(el) => sheetEntreno(el.dataset.fecha),
+  enviarEntreno:(el) => ocupado(el, async () => {
+    if (!S.fotos.entreno) throw new Error('Falta la foto de prueba 📷');
+    const ruta = await subirFoto('entreno', S.fotos.entreno);
+    await rpc('rf_registrar_entreno', { p_fecha:el.dataset.fecha, p_foto:ruta, p_nota:$('#e-nota').value });
+    cerrarSheet(); toast('¡Prueba enviada! 💪'); recargar();
+  }),
+  revisarEntreno:(el) => ocupado(el, async () => {
+    const ok = el.dataset.ok === '1'; let motivo = null;
+    if (!ok){ motivo = prompt('¿Por qué la rechazas?'); if (motivo === null) return; }
+    await rpc('rf_revisar_entreno', { p_id:+el.dataset.id, p_aprobar:ok, p_motivo:motivo });
+    toast(ok ? 'Aprobada 👍' : 'Rechazada'); recargar();
+  }),
+  elegirDias:() => { if (S.sem) sheetDias(); else irTab('hoy'); },
+  toggleDia:(el) => {
+    el.classList.toggle('on');
+    const g = el.closest('.dgrupo'), n = $$('.dchip.on', g).length, req = +g.dataset.req;
+    if (n > req){ el.classList.remove('on'); toast(`Son ${req} ${plural(req, 'día')} por semana`); }
+  },
+  guardarDias:(el) => ocupado(el, async () => {
+    const g = $(`.dgrupo[data-semana="${el.dataset.semana}"]`);
+    const dias = $$('.dchip.on', g).map(b => +b.dataset.d), req = +g.dataset.req;
+    if (dias.length !== req) throw new Error(`Elige ${req} ${plural(req, 'día')}`);
+    await rpc('rf_elegir_dias', { p_semana:el.dataset.semana, p_dias:dias });
+    cerrarSheet(); toast('Días guardados ✓'); irTab('hoy');
+  }),
+
+  orden:(el) => { S.rankOrden = el.dataset.o; irTab('ranking'); },
+
+  dietaDia:(el) => { const f = D.add(S.dietaFecha || S.hoy, +el.dataset.d); if (f > S.hoy) return; S.dietaFecha = f; irTab('dieta'); },
+  dietaVista:(el) => { S.dietaVista = el.dataset.v; irTab('dieta'); },
+  nuevaComida:() => sheetComida(null),
+  editarComida:(el, ev) => { ev.stopPropagation(); sheetComida(S.comidas.find(c => c.id === +el.dataset.id)); },
+  guardarComida:(el) => ocupado(el, async () => {
+    const id = el.dataset.id ? +el.dataset.id : null;
+    if (!id && !S.fotos.comida) throw new Error('Falta la foto de la comida 📷');
+    const foto = S.fotos.comida ? await subirFoto('comida', S.fotos.comida) : null;
+    await rpc('rf_comida_guardar', { p_id:id, p_fecha:el.dataset.fecha, p_tipo:$('#c-tipo .on').textContent.trim(),
+      p_descripcion:$('#c-desc').value, p_foto:foto, p_calificacion:$('#c-cal .on').dataset.v });
+    cerrarSheet(); toast('Comida guardada ✓'); irTab('dieta');
+  }),
+  borrarComida:(el) => ocupado(el, async () => {
+    if (!confirm('¿Borrar esta comida?')) return;
+    await rpc('rf_comida_borrar', { p_id:+el.dataset.id }); cerrarSheet(); toast('Comida borrada'); irTab('dieta');
+  }),
+
+  pagar:sheetPagar,
+  enviarPago:(el) => ocupado(el, async () => {
+    const monto = parseFloat(($('#p-monto').value || '').replace(',', '.'));
+    if (!(monto > 0)) throw new Error('Escribe el monto');
+    if (!S.fotos.pago) throw new Error('Falta la foto del comprobante 📷');
+    const ruta = await subirFoto('pago', S.fotos.pago);
+    await rpc('rf_pagar', { p_monto:monto, p_foto:ruta, p_nota:$('#p-nota').value });
+    cerrarSheet(); toast('Pago enviado. Otra participante lo confirma ✓'); irTab('deuda');
+  }),
+  revisarPago:(el) => ocupado(el, async () => {
+    const ok = el.dataset.ok === '1';
+    if (!ok && !confirm('¿Rechazar este pago? (por ejemplo, si el comprobante no coincide)')) return;
+    await rpc('rf_revisar_pago', { p_id:+el.dataset.id, p_confirmar:ok }); toast(ok ? 'Pago confirmado ✓' : 'Pago rechazado'); irTab('deuda');
+  }),
+  copiarCuenta:async () => { try { await navigator.clipboard.writeText(S.cfg.cuenta_reto); toast('Copiado ✓'); } catch { toast('No se pudo copiar', 'error'); } },
+
+  canjear:(el) => ocupado(el, async () => {
+    if (!confirm(`¿Canjear "${el.dataset.nombre}"?`)) return;
+    await rpc('rf_canjear', { p_premio:+el.dataset.id }); toast('¡Premio canjeado! 🎉'); irTab('premios');
+  }),
+
+  detalle:(el, ev) => { if (ev.target.closest('[data-a="verFoto"],[data-a="editarComida"]')) return; ocupado(null, () => abrirDetalle(el.dataset.tipo, +el.dataset.id)); },
+  comentar:(el) => ocupado(el, async () => {
+    const t = $('#com-txt').value.trim(); if (!t) return;
+    await rpc('rf_comentar', { p_tipo:el.dataset.tipo, p_objeto:+el.dataset.id, p_texto:t });
+    await abrirDetalle(el.dataset.tipo, +el.dataset.id); if (S.tab === 'hoy' || S.tab === 'dieta') recargar();
+  }),
+  borrarComentario:(el) => ocupado(el, async () => {
+    await rpc('rf_comentario_borrar', { p_id:+el.dataset.id }); await abrirDetalle(el.dataset.tipo, +el.dataset.obj);
+  }),
+
+  guardarPerfil:(el) => ocupado(el, async () => {
+    const emoji = $('#aj-emoji .on')?.textContent || S.me.emoji;
+    await rpc('rf_unirse', { p_nombre:$('#aj-nombre').value, p_codigo:null, p_emoji:emoji });
+    S.me.nombre = $('#aj-nombre').value.trim(); S.me.emoji = emoji; $('#t-yo').textContent = emoji;
+    await cargarParticipantes(); cerrarSheet(); toast('Perfil guardado ✓'); recargar();
+  }),
+  compartir:async () => {
+    const url = location.origin + location.pathname + '?codigo=' + encodeURIComponent(S.cfg.codigo);
+    const txt = `Únete a ${S.cfg.nombre_reto} 💪\n${url}\nCódigo: ${S.cfg.codigo}`;
+    try { if (navigator.share) await navigator.share({ title:S.cfg.nombre_reto, text:txt }); else { await navigator.clipboard.writeText(txt); toast('Invitación copiada ✓'); } } catch {}
+  },
+  guardarConfig:(el) => ocupado(el, async () => {
+    const v = k => $('#cf-' + k).value.trim(), n = k => { const x = v(k).replace(',', '.'); return x === '' ? null : Number(x); }, b = k => $('#cf-' + k).checked;
+    await rpc('rf_config_guardar', { p:{ nombre_reto:v('nombre_reto'), dias_por_semana:n('dias_por_semana'), multa_base:n('multa_base'),
+      faltas_por_tramo:n('faltas_por_tramo'), factor_tramo:n('factor_tramo'), multa_maxima:n('multa_maxima'), dias_gracia:n('dias_gracia'),
+      reinicio_mensual:b('reinicio_mensual'), requiere_aprobacion:b('requiere_aprobacion'), cambiar_semana_en_curso:b('cambiar_semana_en_curso'),
+      cuenta_reto:v('cuenta_reto'), moneda:v('moneda') || '$', codigo:v('codigo') } });
+    S.cfg = (await rpc('rf_yo')).config; $('#t-nombre').textContent = S.cfg.nombre_reto; toast('Reglas guardadas ✓');
+  }),
+  editarPremio:(el) => sheetPremio(el.dataset.p ? JSON.parse(el.dataset.p) : null),
+  guardarPremio:(el) => ocupado(el, async () => {
+    await rpc('rf_premio_guardar', { p_id:el.dataset.id ? +el.dataset.id : null, p_meses:+$('#pr-m').value || 1, p_nombre:$('#pr-n').value,
+      p_descripcion:$('#pr-d').value, p_accion:$('#pr-b').checked ? 'borrar_deuda' : 'ninguna', p_activo:$('#pr-a').checked, p_orden:+$('#pr-o').value || 0 });
+    toast('Premio guardado ✓'); await sheetAdmin();
+  }),
+  guardarPart:(el) => ocupado(el, async () => {
+    const g = el.closest('[data-part]'), k = x => g.querySelector(`[data-k="${x}"]`);
+    await rpc('rf_participante_guardar', { p_id:el.dataset.id, p_activo:k('activo').checked, p_es_admin:k('es_admin').checked, p_alta:k('alta').value || null });
+    await cargarParticipantes(); toast('Guardado ✓');
+  }),
+  anularFalta:(el) => ocupado(el, async () => {
+    const m = prompt('Motivo de la corrección'); if (m === null) return;
+    await rpc('rf_anular_falta', { p_usuario:el.dataset.u, p_fecha:el.dataset.f, p_motivo:m }); toast('Falta anulada ✓'); await sheetAdmin();
+  }),
+  ajuste:(el) => ocupado(el, async () => {
+    await rpc('rf_ajuste', { p_usuario:$('#aj-u').value, p_monto:parseFloat($('#aj-m').value.replace(',', '.')), p_motivo:$('#aj-mot').value });
+    toast('Ajuste guardado ✓'); $('#aj-m').value = ''; $('#aj-mot').value = '';
+  })
+};
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-a]'); if (!el) return;
+  const f = A[el.dataset.a]; if (!f) return;
+  if (el.tagName === 'BUTTON' || el.tagName === 'A') ev.preventDefault();
+  f(el, ev);
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.id === 'com-txt') $('[data-a="comentar"]')?.click(); });
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+iniciar().catch(e => mensaje('😕', 'No se pudo iniciar', e.message));
+</script>
+</body>
+</html>
